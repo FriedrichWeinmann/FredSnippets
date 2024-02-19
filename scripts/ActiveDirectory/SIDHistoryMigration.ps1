@@ -515,7 +515,4 @@ Get-MigrationPrincipal -Server $SourceServer -Credential $SourceCredential -Sear
 	Import-ADPrincipalSID -Server $DestinationServer -Credential $DestinationCredential -FromServer $SourceServer -FromCredential $SourceCredential |
 		Write-MigrationPrincipalLog
 
-
-
-
 Stop-Log
