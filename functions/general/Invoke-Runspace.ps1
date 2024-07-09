@@ -117,7 +117,7 @@
 				$moduleInfo = $module
 				if ($module.ModuleBase) { $moduleInfo = $module.ModuleBase }
 				$moduleSpec = [Microsoft.PowerShell.Commands.ModuleSpecification]::new($moduleInfo)
-				$null = $SessionState.Modules.Add($moduleSpec)
+				$SessionState.ImportPSModule($moduleSpec)
 			}
 		}
 		#endregion Functions
