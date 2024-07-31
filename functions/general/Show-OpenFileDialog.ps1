@@ -10,6 +10,11 @@
         The initial directory from which the user gets to pick a file.
         Defaults to the current path.
 
+	.PARAMETER Filter
+		Adds a filter to the dialog window.
+		Can be used to prompt the user to only select files of relevant extensions.
+		Example: 'Text files (*.txt)|*.txt|All files (*.*)|*.*'
+
     .PARAMETER Title
         The window title to display.
     
@@ -27,6 +32,9 @@
         [string]
         $InitialDirectory = '.',
 
+		[string]
+		$Filter,
+
         [string]
         $Title,
 
@@ -40,6 +48,7 @@
         $dialog.InitialDirectory = Resolve-Path -Path $InitialDirectory
         $dialog.MultiSelect = $MultiSelect.ToBool()
         $dialog.Title = $Title
+		if ($Filter) { $dialog.Filter = $Filter }
         $null = $dialog.ShowDialog()
         $dialog.FileNames
     }
