@@ -1,4 +1,4 @@
-﻿function Save-Credential
+function Save-Credential
 {
 	<#
 		.SYNOPSIS
@@ -48,7 +48,7 @@
 
 		[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[string[]]
-		$ComputerName = $env:COMPUTERNAME,
+		$ComputerName,
 		
 		[PSCredential]
 		$Credential
@@ -58,9 +58,9 @@
 	{
 		$parameters = @{
 			ArgumentList = $TargetCredential, $Path, $AccessAccount
-			ComputerName = $ComputerName
-			Credential = $Credential
 		}
+		if ($ComputerName) { $parameters.ComputerName = $ComputerName }
+		if ($Credential) { $parameters.Credential = $Credential }
 		
 		Invoke-Command @parameters -ScriptBlock {
 			Param (
