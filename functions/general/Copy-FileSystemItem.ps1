@@ -104,6 +104,7 @@ function Copy-FileSystemItem {
 			Foreach ($resultitem in $resultItems) {
 				[PSCustomObject]@{
 					RelativePath = $resultItem.FullName.SubString($baseItem.FullName.Length).Trim('\')
+					Name         = $resultItem.Name
 					IsFile       = -not $resultItem.PSisContainer
 					FullName     = $resultitem.FullName
 					BasePath     = $baseItem.FullName
