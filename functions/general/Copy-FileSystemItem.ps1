@@ -154,7 +154,7 @@ function Copy-FileSystemItem {
 			#endregion Handle Interrupt Conditions
 
 			try {
-				Copy-Item -Path $sourceItem.FullName -Destination $targetPath -Force
+				Copy-Item -Path $sourceItem.FullName -Destination $targetPath -Force -ErrorAction Stop
 				$update.Action = 'Copied'
 			}
 			catch {
