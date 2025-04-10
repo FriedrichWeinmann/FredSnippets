@@ -36,7 +36,22 @@ function Get-ADServerReplication {
 	}
 	process {
 		foreach ($domainController in $domainControllers) {
-			$metadata = Get-ADReplicationPartnerMetadata @adParam -Scope Server -Target $domainController.DNSHostName
+			try { $metadata = Get-ADReplicationPartnerMetadata @adParam -Scope Server -Target $domainController.DNSHostName }
+			catch {
+				[PSCustomObject]@{
+					Source      = $domainController.DNSHostName
+					Partition   = $null
+					From        = $null
+					To          = $null
+					USN         = $null
+					LastAttempt = $null
+					LastSuccess = $null
+					LastCode    = $null
+					ErrorCount  = $null
+					Object      = $_
+				}
+				continue
+			}
 			foreach ($datum in $metadata) {
 				if ($datum.PartnerType -eq 'Inbound') {
 					$from = $datum.Partner -replace 'CN=NTDS Settings,CN=(.+?),.+', '$1'
