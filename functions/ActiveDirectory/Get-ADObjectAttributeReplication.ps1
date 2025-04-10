@@ -1,3 +1,4 @@
+
 function Get-ADObjectAttributeReplication {
 	<#
 	.SYNOPSIS
@@ -129,6 +130,7 @@ function Get-ADObjectAttributeReplication {
 					OriginServer    = $attributeItem.LastOriginatingChangeDirectoryServerIdentity -replace '^CN=NTDS Settings,CN=(.+?),.+', '$1'
 				}
 			}
+			break
 		}
 		until ($pending.Count -lt 1)
 	}
