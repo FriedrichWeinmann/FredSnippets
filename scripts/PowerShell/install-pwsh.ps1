@@ -11,6 +11,11 @@
 	Intended for use in Automation Accounts to bootstrap PowerShell 7 into hybrid workers.
 	Note: Hybrid Workers will likely need to be rebooted before PowerShell will be detected.
 
+ 	To Install modules permanently into a Hybrid Worker, I strongly recommend using the Module "ModuleFast":
+
+	Invoke-WebRequest bit.ly/modulefast -UseBasicParsing | Invoke-Expression
+	Install-ModuleFast -Specification "ModuleName" -Destination "C:\Program Files\WindowsPowerShell\Modules"
+
 .PARAMETER Type
 	What architecture-version of windows to install PowerShell for.
 	Supports: x64, x86 or arm64
