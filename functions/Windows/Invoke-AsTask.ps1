@@ -32,6 +32,10 @@ function Invoke-AsTask {
 	.PARAMETER LogPath
 		Where to write the logs.
 		Defaults to C:\Temp
+
+	.PARAMETER Timeout
+		How long the task may take before the function gives up.
+		Defaults to 45 minutes.
 	
 	.EXAMPLE
 		PS C:\> Invoke-AsTask -Scriptblock $code -Identity SYSTEM
