@@ -30,15 +30,23 @@ function Invoke-AsTask {
 		Defaults to C:\Temp
 	
 	.EXAMPLE
-		PS C:\> Invoke-AsTask -Scritpblock $code -Identity SYSTEM
+		PS C:\> Invoke-AsTask -Scriptblock $code -Identity SYSTEM
 
 		Executes something as SYSTEM and returns the results
+
+	.EXAMPLE
+		PS C:\> Invoke-AsTask -Scriptblock $code
+
+		Executes something as the current user and returns the results
 	#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[scriptblock]
 		$ScriptBlock,
+
+		[object[]]
+		$ArgumentList,
 
 		[ValidateScript({
 				if ($_ -notmatch "'") { return $true }
@@ -150,6 +158,9 @@ function Invoke-AsTask {
 		$logPath = '%LOGPATH%'
 		$taskIdentity = '%IDENTITY%'
 		$payload = { '%PAYLOAD%' }
+		$argumentData = @'
+%ARGUMENTS%
+'@ | ConvertFrom-Json
 		$fullLogPath = Join-Path -Path $logPath -ChildPath "$taskIdentity.csv"
 		$resultPath = Join-Path -Path $logPath -ChildPath "$taskIdentity.json"
 
@@ -166,7 +177,8 @@ function Invoke-AsTask {
 			Logs   = $null
 		}
 		try {
-			$result.Output = & $payload
+			if ($argumentData.Count -gt 0) { $result.Output = & $payload $argumentData.Arguments }
+			else { $result.Output = & $payload }
 			Write-Log -Message "Task completed successfully"
 		}
 		catch {
@@ -185,8 +197,12 @@ function Invoke-AsTask {
 	}
 	#endregion Wrapper
 
+	$argumentData = @{
+		Count = $ArgumentList.Count
+		Arguments = $ArgumentList
+	}
 	$taskIdentity = "$Name-$(New-Guid)"
-	$plaintextCode = $wrapperScript.ToString() -replace '%LOGPATH%', $LogPath -replace '%IDENTITY%', $taskIdentity -replace "'%PAYLOAD%'", $ScriptBlock.ToString()
+	$plaintextCode = $wrapperScript.ToString() -replace '%LOGPATH%', $LogPath -replace '%IDENTITY%', $taskIdentity -replace "'%PAYLOAD%'", $ScriptBlock.ToString() -replace '%ARGUMENTS%',($argumentData | ConvertTo-Json -Depth 5 -Compress)
 	$bytes = [System.Text.Encoding]::Unicode.GetBytes($plaintextCode)
 	$encodedCommand = [Convert]::ToBase64String($bytes)
 
