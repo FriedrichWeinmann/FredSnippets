@@ -33,6 +33,10 @@ function Invoke-AsTask {
 		Where to write the logs.
 		Defaults to C:\Temp
 
+	.PARAMETER LogRetention
+		How long the log and result files should be retained.
+		By default, they will be deleted at the end of the run.
+
 	.PARAMETER Timeout
 		How long the task may take before the function gives up.
 		Defaults to 45 minutes.
@@ -74,6 +78,9 @@ function Invoke-AsTask {
 
 		[string]
 		$LogPath = 'C:\Temp',
+
+		[timespan]
+		$LogRetention,
 
 		[timespan]
 		$Timeout = '00:45:00'
@@ -208,26 +215,29 @@ function Invoke-AsTask {
 	}
 	#endregion Wrapper
 
+	#region Design Scheduled Task
 	$argumentData = @{
-		Count = $ArgumentList.Count
+		Count     = $ArgumentList.Count
 		Arguments = $ArgumentList
 	}
 	$taskIdentity = "$Name-$([guid]::NewGuid())"
-	$plaintextCode = $wrapperScript.ToString() -replace '%LOGPATH%', $LogPath -replace '%IDENTITY%', $taskIdentity -replace "'%PAYLOAD%'", $ScriptBlock.ToString() -replace '%ARGUMENTS%',($argumentData | ConvertTo-Json -Depth 5 -Compress)
+	$plaintextCode = $wrapperScript.ToString() -replace '%LOGPATH%', $LogPath -replace '%IDENTITY%', $taskIdentity -replace "'%PAYLOAD%'", $ScriptBlock.ToString() -replace '%ARGUMENTS%', ($argumentData | ConvertTo-Json -Depth 5 -Compress)
 	$bytes = [System.Text.Encoding]::Unicode.GetBytes($plaintextCode)
 	$encodedCommand = [Convert]::ToBase64String($bytes)
 
 	$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -EncodedCommand $encodedCommand"
 	$principal = New-ScheduledTaskPrincipal -UserId $Identity -RunLevel Highest -LogonType Password
 	$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddYears(1)
+	$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit $Timeout
 	if ($Interactive) { $principal.LogonType = 'Interactive' }
 
 	$registerParam = @{
-		TaskName = "PowerShell_System_$taskIdentity"
+		TaskName    = "PowerShell_System_$taskIdentity"
 		Description = "PowerShell Task - $Name"
-		Action = $action
-		Principal = $principal
-		Trigger = $trigger
+		Action      = $action
+		Principal   = $principal
+		Trigger     = $trigger
+		Settings    = $settings
 	}
 	if ($Password) {
 		$registerParam.User = $Identity
@@ -235,6 +245,18 @@ function Invoke-AsTask {
 	}
 	$task = Register-ScheduledTask @registerParam
 	$task | Start-ScheduledTask
+	#endregion Design Scheduled Task
+
+	#region Execute & Cleanup
+	$cleanLogs = $PSBoundParameters.Keys -notcontains 'LogRetention'
+	if (-not $cleanLogs) {
+		$limit = (Get-Date).AddMilliseconds(-1 * $LogRetention.TotalMilliseconds)
+		Get-ChildItem -Path $LogPath | Where-Object {
+			$_.LastWriteTime -lt $limit -and
+			$_.Name -match '\-([0-9a-fA-F]){8}\-([0-9a-fA-F]){4}\-([0-9a-fA-F]){4}\-([0-9a-fA-F]){4}\-([0-9a-fA-F]){12}\.(csv|json)$'
+		} | Remove-Item
+	}
+
 	try {
 		$start = Get-Date
 		$limit = $start.Add($Timeout)
@@ -261,28 +283,28 @@ function Invoke-AsTask {
 
 		$result = [PSCustomObject]@{
 			Success = $true
-			Code = $info.LastTaskResult
-			Logs = @()
-			Error = $null
-			Output = $null
+			Code    = $info.LastTaskResult
+			Logs    = @()
+			Error   = $null
+			Output  = $null
 		}
 
 		if (Test-Path -Path $resultFile) {
 			$data = Get-Content -Path $resultFile | ConvertFrom-Json
-			Remove-Item -Path $resultFile
+			if ($cleanLogs) { Remove-Item -Path $resultFile }
 			$result.Logs = $data.Logs
 			$result.Error = $data.Error
 			$result.Output = $data.Output
 			if ($data.Error) { $result.Success = $false }
 			if (Test-Path -Path $logsFile) {
-				Remove-Item -Path $logsFile
+				if ($cleanLogs) { Remove-Item -Path $logsFile }
 			}
 		}
 		else {
 			if (Test-Path -Path $logsFile) {
 				try { $result.Logs = Import-Csv -Path $logsFile }
 				catch { }
-				Remove-Item -Path $logsFile -ErrorAction SilentlyContinue
+				if ($cleanLogs) { Remove-Item -Path $logsFile -ErrorAction SilentlyContinue }
 			}
 			$result.Success = $false
 		}
@@ -291,4 +313,5 @@ function Invoke-AsTask {
 
 		$result
 	}
+	#endregion Execute & Cleanup
 }
