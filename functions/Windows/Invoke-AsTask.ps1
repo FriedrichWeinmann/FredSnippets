@@ -11,6 +11,10 @@ function Invoke-AsTask {
 		The scriptblock to execute.
 		Use "Write-Log" to send messages to the log.
 		The result output will be returned.
+
+	.PARAMETER ArgumentList
+		List of arguments to pass to your scriptblock.
+		Arguments are transported via json, limited to depth 5.
 	
 	.PARAMETER Name
 		Name of the task, to better track event creation and completion.
