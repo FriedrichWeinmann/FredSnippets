@@ -205,7 +205,7 @@ function Invoke-AsTask {
 		Count = $ArgumentList.Count
 		Arguments = $ArgumentList
 	}
-	$taskIdentity = "$Name-$(New-Guid)"
+	$taskIdentity = "$Name-$([guid]::NewGuid())"
 	$plaintextCode = $wrapperScript.ToString() -replace '%LOGPATH%', $LogPath -replace '%IDENTITY%', $taskIdentity -replace "'%PAYLOAD%'", $ScriptBlock.ToString() -replace '%ARGUMENTS%',($argumentData | ConvertTo-Json -Depth 5 -Compress)
 	$bytes = [System.Text.Encoding]::Unicode.GetBytes($plaintextCode)
 	$encodedCommand = [Convert]::ToBase64String($bytes)
