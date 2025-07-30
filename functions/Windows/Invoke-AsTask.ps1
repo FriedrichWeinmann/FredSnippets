@@ -219,6 +219,7 @@ function Invoke-AsTask {
 
 	$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -EncodedCommand $encodedCommand"
 	$principal = New-ScheduledTaskPrincipal -UserId $Identity -RunLevel Highest -LogonType Password
+	$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddYears(1)
 	if ($Interactive) { $principal.LogonType = 'Interactive' }
 
 	$registerParam = @{
@@ -226,6 +227,7 @@ function Invoke-AsTask {
 		Description = "PowerShell Task - $Name"
 		Action = $action
 		Principal = $principal
+		Trigger = $trigger
 	}
 	if ($Password) {
 		$registerParam.User = $Identity
