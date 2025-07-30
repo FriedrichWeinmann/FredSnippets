@@ -69,7 +69,10 @@ function Invoke-AsTask {
 		$Interactive,
 
 		[string]
-		$LogPath = 'C:\Temp'
+		$LogPath = 'C:\Temp',
+
+		[timespan]
+		$Timeout = '00:45:00'
 	)
 
 	#region Wrapper ($wrapperScript)
@@ -181,7 +184,7 @@ function Invoke-AsTask {
 			Logs   = $null
 		}
 		try {
-			if ($argumentData.Count -gt 0) { $result.Output = & $payload $argumentData.Arguments }
+			if ($argumentData.Count -gt 0) { $result.Output = & $payload $($argumentData.Arguments) }
 			else { $result.Output = & $payload }
 			Write-Log -Message "Task completed successfully"
 		}
@@ -228,10 +231,14 @@ function Invoke-AsTask {
 	$task | Start-ScheduledTask
 	try {
 		$start = Get-Date
+		$limit = $start.Add($Timeout)
+		$totalSeconds = ($limit - $start).TotalSeconds
 
 		Write-Progress -Activity "Waiting for Task to complete"
-		while (($task | Get-ScheduledTask).State -ne "Ready") {
-			Write-Progress -Activity "Waiting for Task to complete" -Status "Started $($start.ToString('HH:mm:ss')), running for $(((Get-Date) - $start).ToString('c'))" -PercentComplete 0
+		while (($task | Get-ScheduledTask -ErrorAction Stop).State -ne "Ready") {
+			if ((Get-Date) -gt $limit) { throw "Task timed out!" }
+			$elapsed = ((Get-Date) - $start).TotalSeconds
+			Write-Progress -Activity "Waiting for Task to complete" -Status "Started $($start.ToString('HH:mm:ss')), running for $(((Get-Date) - $start).ToString('c'))" -PercentComplete ($elapsed / $totalSeconds * 100)
 			Start-Sleep -Seconds 1
 		}
 	}
