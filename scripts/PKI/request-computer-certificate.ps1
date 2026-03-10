@@ -303,7 +303,7 @@ function Get-LdapObject {
 			$searcher.SearchRoot = New-DirectoryEntry -Path ("LDAP://CN=Configuration,{0}" -f $searcher.SearchRoot.distinguishedName[0]) -Server $Server -Credential $Credential
 		}
 		
-		Write-PSFMessage -Level InternalComment -String 'Get-LdapObject.Search' -StringValues $SearchScope, $searcher.SearchRoot.Path
+		Write-Verbose "Searching with scope $($SearchScope) in $($searcher.SearchRoot.Path)"
 		
 		if ($Credential) {
 			$searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry($searcher.SearchRoot.Path, $Credential.UserName, $Credential.GetNetworkCredential().Password)
@@ -315,7 +315,7 @@ function Get-LdapObject {
 			$null = $searcher.PropertiesToLoad.Add($propertyName)
 		}
 		
-		Write-PSFMessage -String 'Get-LdapObject.Filter' -StringValues $ldapFilter
+		Write-Verbose "Final LDAP Filter: $($ldapFilter)"
 		#endregion Prepare Searcher
 	}
 	process {
