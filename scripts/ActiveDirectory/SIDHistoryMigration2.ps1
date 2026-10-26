@@ -240,6 +240,7 @@ function New-DSSession {
 
 	$session = [DSApi.DSSession]::new()
 	$session.Credential = $Credential
+	$session.Authenticate()
 	$session.Connect($domain.DnsRoot, $dc)
 	$session
 }
