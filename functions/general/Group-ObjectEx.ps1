@@ -38,8 +38,10 @@ function Group-ObjectEx {
 	}
 	process {
 		if ($Null -eq $InputObject) { return }
-		if (-not $data[$InputObject.$Property]) { $data[$InputObject.$Property] = [System.Collections.Generic.List[object]]::new() }
-		$data[$InputObject.$Property].Add($InputObject)
+		$key = $InputObject.$Property
+		if ($null -eq $key) { $key = '' }
+		if (-not $data[$key]) { $data[$key] = [System.Collections.Generic.List[object]]::new() }
+		$data[$key].Add($InputObject)
 	}
 	end {
 		if ($AsHashtable) { return $data }
